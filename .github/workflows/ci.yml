@@ -1,0 +1,69 @@
+# Two jobs.
+#
+# `rust` is the ordinary gate: format, clippy, tests.
+#
+# `cross` builds the release binary through cross-rs, so the glibc it links is
+# the one in cross's fixed container image rather than whatever the runner
+# ships. That image is Debian stable (glibc 2.34), only marginally older than
+# the runner, so it pins a reproducible floor rather than reaching much older
+# hosts. Run it in CI as well as in the release workflow, so a PR is gated on
+# the build that actually ships.
+#
+# The GPU backend cannot be exercised here: runners have no NVIDIA driver.
+# Exercise it locally before releasing.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: format
+        run: cargo fmt --all --check
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: test
+        run: cargo test --workspace
+
+  cross:
+    name: cross ${{ matrix.target }}
+    needs: rust
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: install cross
+        # The pre-built binary rather than `cargo install cross`, which spends
+        # ~5 min compiling a tool the job uses once.
+        run: |
+          mkdir -p "$HOME/.cargo/bin"
+          curl -L --proto '=https' --tlsv1.2 -sSf \
+            https://github.com/cross-rs/cross/releases/download/v0.2.5/cross-x86_64-unknown-linux-gnu.tar.gz \
+            | tar -xzf - -C "$HOME/.cargo/bin"
+      - name: build
+        run: cross build --release --locked --target "${{ matrix.target }}"

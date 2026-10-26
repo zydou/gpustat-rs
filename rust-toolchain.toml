@@ -1,0 +1,6 @@
+# `channel = "stable"` rather than a pinned version: there is nothing here that
+# pins the compiler, so a release that changes compiler output surfaces as a
+# test failure instead of being papered over by a stale pin.
+[toolchain]
+channel = "stable"
+components = ["clippy", "rustfmt"]

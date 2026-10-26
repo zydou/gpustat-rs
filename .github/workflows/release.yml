@@ -1,0 +1,107 @@
+---
+# Release: one binary, attached to a GitHub Release.
+#
+# The build goes through cross-rs so the binary comes out of a fixed container
+# image rather than whatever the runner ships. That image is Debian stable, so
+# the artifact needs glibc >= 2.34; that is the floor to publish, not a way of
+# reaching older hosts than the runner.
+#
+# Linux x86_64 on glibc only — no macOS, no aarch64.
+#
+# Trigger: pushes to main, pushes to tags, and a manual dispatch. A tag push
+# releases to that tag; a push to main releases to `nightly`, so the latest
+# main build is always published. `workflow_dispatch` builds the checked-out
+# ref and attaches it to the release named by the `release` input (default
+# `nightly`).
+name: Release
+
+on:
+  push:
+    # A `branches` filter without a `tags` filter excludes tag pushes, so tags
+    # have to be named explicitly. Unfiltered, otherwise: a release tag does
+    # not need a `v` prefix.
+    branches:
+      - main
+    tags:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      release:
+        required: true
+        description: release to attach the binaries to
+        default: nightly
+        type: string
+
+# Attaching to a release needs more than the read-only default token.
+permissions:
+  contents: write
+
+# A re-pushed tag or a second dispatch supersedes the run in flight for the
+# same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: toolchain
+        # The release profile lives in Cargo.toml, so nothing has to be
+        # configured here beyond the target's standard library.
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.target }}
+
+      - name: test
+        # The release job is its own gate. CI runs on the same commit, but a
+        # release should not depend on another workflow having succeeded.
+        run: cargo test --workspace
+
+      - name: Install Cross
+        # The pre-built cross binary rather than `cargo install cross`, which
+        # spends ~5 min compiling a tool the job uses once.
+        run: |
+          mkdir -p "$HOME/.cargo/bin"
+          curl -L --proto '=https' --tlsv1.2 -sSf \
+            https://github.com/cross-rs/cross/releases/download/v0.2.5/cross-x86_64-unknown-linux-gnu.tar.gz \
+            | tar -xzf - -C "$HOME/.cargo/bin"
+
+      - name: Build release binary
+        run: cross build --release --locked --target "${{ matrix.target }}"
+
+      - name: Package ${{ matrix.target }}
+        # The licence goes in the archive: MIT conditions the software on its
+        # notice being carried, and the executable itself embeds nothing.
+        run: |
+          cd "target/${{ matrix.target }}/release"
+          cp "$GITHUB_WORKSPACE/LICENSE" .
+          tar -cJf "gpustat-${{ matrix.target }}.tar.xz" gpustat LICENSE
+          mv "gpustat-${{ matrix.target }}.tar.xz" "$GITHUB_WORKSPACE/"
+
+      - name: Release
+        env:
+          # A tag push releases that tag; a dispatch releases to the name
+          # given in the `release` input; any other push releases to
+          # nightly. The action creates the release — and the tag — when the
+          # name is missing.
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || (github.event_name == 'workflow_dispatch' && inputs.release) || 'nightly' }}
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.TAG }}
+          # Without this GitHub points a newly created release at the default
+          # branch, so the tag could disagree with the artifact it names.
+          target_commitish: ${{ github.sha }}
+          files: gpustat-*.tar.xz

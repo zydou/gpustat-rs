@@ -1,0 +1,36 @@
+[package]
+name = "gpustat-rs"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.85"
+description = "Monitor NVIDIA GPU temperature, memory and process usage"
+authors = ["zydou <git@zydou.me>"]
+license = "MIT"
+repository = "https://github.com/zydou/gpustat-rs"
+keywords = ["nvidia-smi", "nvml", "gpu", "cuda", "monitoring"]
+categories = ["command-line-utilities", "hardware-support", "development-tools"]
+readme = "README.md"
+
+# The binary keeps the upstream name so it drops into an existing `gpustat`
+# PATH; the crate name is different because `gpustat` is already taken on
+# crates.io.
+[[bin]]
+name = "gpustat"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+clap = { version = "4", features = ["derive", "wrap_help"] }
+libc = "0.2"
+nvml-wrapper = "0.13"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
