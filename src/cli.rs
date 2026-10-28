@@ -197,11 +197,7 @@ fn execute(mut args: Args) -> i32 {
     } else {
         format::print_formatted(&mut stdout, &stats, &options).is_ok()
     };
-    if written {
-        0
-    } else {
-        1
-    }
+    if written { 0 } else { 1 }
 }
 
 /// The error for a query that named indices and found none of them.

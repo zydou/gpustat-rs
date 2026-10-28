@@ -24,7 +24,8 @@ cargo test --lib plain_text_layout        # 按名字片段过滤单个测试
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 
-cross build --release --locked --target x86_64-unknown-linux-gnu   # 可移植性构建
+cross build --release --locked --target x86_64-unknown-linux-gnu    # 可移植性构建（x86_64）
+cross build --release --locked --target aarch64-unknown-linux-gnu   # 可移植性构建（ARM）
 ```
 
 `cargo fmt`、`clippy -D warnings`、`cargo test` 三条就是 CI 的门禁，全部必须干净。

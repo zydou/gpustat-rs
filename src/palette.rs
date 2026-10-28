@@ -31,11 +31,7 @@ impl Palette {
 
     /// `code`, or `""` when styling is off.
     fn code(&self, code: &'static str) -> &'static str {
-        if self.enabled {
-            code
-        } else {
-            ""
-        }
+        if self.enabled { code } else { "" }
     }
 
     /// Reset every SGR attribute.

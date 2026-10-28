@@ -36,6 +36,7 @@ dnkt                        Mon Oct 26 20:54:32 2026  575.57.08
 环境。需要 glibc >= 2.34（Debian 12 / Ubuntu 22.04 及更新版本）。
 
 ```sh
+# ARM 机器上把 triple 换成 aarch64-unknown-linux-gnu。
 tar -xJf gpustat-x86_64-unknown-linux-gnu.tar.xz
 sudo install -Dm755 gpustat /usr/local/bin/gpustat
 ```
@@ -44,7 +45,7 @@ sudo install -Dm755 gpustat /usr/local/bin/gpustat
 `/usr/local/bin/gpustat`；如果之前用 pip 装过 Python 版，请先
 `pip uninstall gpustat`，因为两者都输出 `gpustat X.Y.Z`，除此之外无从区分。
 
-只支持 Linux x86_64，不支持 macOS 与 aarch64。
+支持 Linux x86_64 与 aarch64，不支持 macOS。
 
 ## 构建
 
@@ -58,6 +59,7 @@ cargo build --release --locked
 
 ```sh
 cross build --release --locked --target x86_64-unknown-linux-gnu
+cross build --release --locked --target aarch64-unknown-linux-gnu
 ```
 
 ## 说明

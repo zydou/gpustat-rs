@@ -4,15 +4,15 @@
 //! for `--debug`; only the lookups that make a device unnameable fail the whole
 //! query.
 
+use nvml_wrapper::Nvml;
 use nvml_wrapper::enum_wrappers::device::TemperatureSensor;
 use nvml_wrapper::enums::device::UsedGpuMemory;
 use nvml_wrapper::error::NvmlError;
 use nvml_wrapper::struct_wrappers::device::ProcessInfo;
-use nvml_wrapper::Nvml;
 
-use crate::model::{is_unified_memory_device, GpuInfo, Log, Process};
+use crate::model::{GpuInfo, Log, Process, is_unified_memory_device};
 use crate::process;
-use crate::util::{basename, MB};
+use crate::util::{MB, basename};
 
 /// What a device backend must provide to fill the model.
 pub trait Querier {
@@ -222,7 +222,7 @@ impl Querier for NvmlQuerier {
 
 #[cfg(test)]
 mod tests {
-    use super::{unified_memory_used, Process};
+    use super::{Process, unified_memory_used};
 
     fn process(memory: Option<u64>) -> Process {
         Process {

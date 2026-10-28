@@ -37,6 +37,7 @@ The artifact is a single binary dynamically linked against `libc.so.6` and
 22.04 and newer).
 
 ```sh
+# Replace the triple with aarch64-unknown-linux-gnu on ARM.
 tar -xJf gpustat-x86_64-unknown-linux-gnu.tar.xz
 sudo install -Dm755 gpustat /usr/local/bin/gpustat
 ```
@@ -46,7 +47,7 @@ The archive also carries `LICENSE`. The install step overwrites
 pip, `pip uninstall gpustat` first, since both print `gpustat X.Y.Z` and are
 otherwise indistinguishable.
 
-Linux x86_64 only. No macOS, no aarch64.
+Linux on x86_64 and aarch64. No macOS.
 
 ## Build
 
@@ -59,6 +60,7 @@ The toolchain comes from `rust-toolchain.toml` (stable, with `rustfmt` and
 
 ```sh
 cross build --release --locked --target x86_64-unknown-linux-gnu
+cross build --release --locked --target aarch64-unknown-linux-gnu
 ```
 
 ## Notes

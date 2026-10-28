@@ -13,7 +13,7 @@ use std::time::Instant;
 
 use crate::util::read_lossy;
 
-extern "C" {
+unsafe extern "C" {
     fn getpwuid_r(
         uid: libc::uid_t,
         pwd: *mut libc::passwd,
@@ -164,11 +164,7 @@ pub fn system_ram_bytes() -> u64 {
 /// Clocks per second, for turning jiffies into seconds. Linux reports 100.
 fn clk_tck() -> f64 {
     let clocks = unsafe { libc::sysconf(libc::_SC_CLK_TCK) };
-    if clocks > 0 {
-        clocks as f64
-    } else {
-        100.0
-    }
+    if clocks > 0 { clocks as f64 } else { 100.0 }
 }
 
 fn sample(pid: u32) -> Option<Sample> {

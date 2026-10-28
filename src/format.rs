@@ -7,7 +7,7 @@ use std::io::{self, IsTerminal, Write};
 
 use chrono::Local;
 
-use crate::model::{GpuStat, GpuStatCollection, Process, NOT_SUPPORTED};
+use crate::model::{GpuStat, GpuStatCollection, NOT_SUPPORTED, Process};
 use crate::palette::Palette;
 use crate::util;
 
